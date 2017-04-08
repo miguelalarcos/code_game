@@ -43,7 +43,7 @@ class Procedimiento:
         self.lista = lista
 
     def to_code(self, tab=0):
-        return ' '*tab+  'def {a}():\n'.format(a=self.name) + self.lista.to_code(tab+4)
+        return ' '*tab + 'def {a}():\n'.format(a=self.name) + self.lista.to_code(tab+4)
 
 
 class MenorQue:
