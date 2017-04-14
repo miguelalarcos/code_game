@@ -59,7 +59,7 @@ class Procedimiento:
         return ' '*tab + 'def {a}():\n'.format(a=self.name) + self.lista.to_code(tab+4)
 
     def to_str(self, tab=0):
-        return ' ' * tab + 'def {a}():\n'.format(a=self.name) + self.lista.to_str(tab + 4)
+        return ' ' * tab + 'función {a}():\n'.format(a=self.name) + self.lista.to_str(tab + 4)
 
 
 class MenorQue:
@@ -192,6 +192,39 @@ class LlamarFuncion:
         return ' ' * tab + '{name}({args})'.format(name=self.name, args=', '.join([str(x) for x in self.args]))
 
 
+class Funcion:
+    def __init__(self, name, type_args, type_return):
+        self.name = name
+        self.type_args = type_args
+        self.args = {}
+        self.type_return = type_return
+
+    def add_arg(self, name_arg, name, obj):
+        self.args[name_arg] = (name, obj)
+
+    def check(self):
+        for k,v in self.args.items():
+            v = v[1]
+            t = self.type_args[k]
+            if not(isinstance(v, t) or isinstance(v, Funcion) and isinstance(v.type_return, t)):
+                return False
+        return True
+
+
+class Longitud_(Funcion):
+    def __init__(self):
+        super().__init__('longitud', {'lista': list}, int)
+
+    def __call__(self):
+        return len(self.args['lista'][1])
+
+    def to_code(self, tab=0):
+        return 'len({lista})'.format(lista=self.args['lista'][0])
+
+    def to_str(self, tab=0):
+        return 'la longitud de {lista}'.format(lista=self.args['lista'][0])
+
+
 class Longitud:
     def __init__(self, lista_name):
         self.lista_name = lista_name
@@ -203,10 +236,22 @@ class Longitud:
         return 'la longitud de {lista}'.format(lista=self.lista_name)
 
 
+class Return:
+    def __init__(self, value):
+        self.value = value
+
+    def to_code(self, tab):
+        return ' '*tab + 'return {value}'.format(value=self.value.to_code(0))
+
+    def to_str(self, tab):
+        return ' ' * tab + 'devolvemos {value}'.format(value=self.value.to_str(0))
+
 # ###################
 enemigos = []
 #expr = Asignacion(Literal('x'), LlamarFuncion('f', []))
-expr = Asignacion(Literal('x'), Longitud('enemigos'))
+long = Longitud_()
+long.add_arg('lista', 'enemigos', enemigos)
+expr = Asignacion(Literal('x'), long) #Longitud('enemigos'))
 incr = Incrementar(Literal('x'), Literal('5'))
 
 and_expr = Y(MenorQue(Literal('x'), Literal('10')), MayorQue(Literal('x'), Literal('0')))
@@ -215,7 +260,7 @@ if1 = If(and_expr,
          ListCode([Literal('print("hola")')]),
          ListCode([Literal('print("mundo")')]))
 
-lista_code = ListCode([Procedimiento('f', ListCode([Literal('return 5')])), expr,
+lista_code = ListCode([Procedimiento('f', ListCode([Return(Literal('5'))])), expr,
                        incr, if1])
 proc = Procedimiento('main', lista_code)
 str_code = proc.to_code()
@@ -225,3 +270,15 @@ exec(str_code)
 main()
 
 print(proc.to_str())
+
+### ###
+
+#por cada sprite en sprites_en_pantalla:
+#   mover sprite
+#   si tipo de sprite es bala:
+#       pj es posicion de jugador
+#       pb es posicion de bala
+#       pe es obtener atributo posicion_explosion de bala
+#       si distancia entre pj, pb es mayor o igual que distancia entre pj, pe:
+#           crear explosion en posicion pe
+#           destruir bala
